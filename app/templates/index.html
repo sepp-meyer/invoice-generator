@@ -1,124 +1,203 @@
-{% extends "base.html" %}
-{% block title %}Invoice Explorer (Schritt-für-Schritt){% endblock %}
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8"/>
+  <title>Invoice Data Explorer (MVP)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <h1>Invoice Data Explorer (MVP)</h1>
 
-{% block body %}
-<h1>Invoice Explorer (Text-Only)</h1>
-
-<!-- Schritt 1: Rechnungs-ID -->
-<form method="post">
-  <input type="hidden" name="action" value="fetch_invoice" />
-  <label for="entry_id">Rechnungs-ID:</label>
-  <input id="entry_id" name="entry_id" type="text" placeholder="z. B. dch6FvUW" value="{{ entry_id|default('') }}" />
-  <button type="submit">Rechnung abrufen</button>
-  <span class="muted">Backend: {{ config.ENTRY_HOST }}{{ config.SPACE_PREFIX }}</span>
-</form>
-
-{% if error %}
-  <div class="box err"><strong>Fehler:</strong> {{ error }}</div>
-{% endif %}
-
-{% if invoice_general %}
-  <div class="hr"></div>
-  <h2>1) Rechnung – Übersicht</h2>
-  <div class="kv">
-    <div class="key">ID</div><div>{{ invoice_general.id }}</div>
-    <div class="key">Type</div><div>{{ invoice_general.type }}</div>
-    <div class="key">Title</div><div>{{ invoice_general.title }}</div>
-    <div class="key">Tags</div><div>{{ invoice_general.tags|join(", ") }}</div>
-    <div class="key">Created</div><div>{{ invoice_general.created_at }}</div>
-    <div class="key">Parent-ID</div><div>{{ invoice_general.parent_id }}</div>
-    <div class="key">Pfad</div><div><code>{{ invoice_general.path }}</code></div>
-  </div>
-
-  <p class="muted">Benutzte URL: <code>{{ invoice_used_url }}</code></p>
-
-  <h3>Erkannte Minimalfelder</h3>
-  <div class="kv">
-    {% for k, v in invoice_minimal.items() %}
-      <div class="key">{{ k }}</div><div>{{ v or '—' }}</div>
-    {% endfor %}
-  </div>
-
-  <div class="box" style="margin-top:1rem">
-    <strong>Gefundene Parent-IDs aus type_path</strong>
-    <div class="kv" style="margin-top:.5rem">
-      <div class="key">Firma-ID</div>
-      <div>
-        {{ firma_id or '—' }}
-        {% if firma_id %}
-          <form method="post" style="display:inline">
-            <input type="hidden" name="action" value="fetch_firma" />
-            <input type="hidden" name="entry_id" value="{{ entry_id }}" />
-            <input type="hidden" name="firma_id" value="{{ firma_id }}" />
-            <input type="hidden" name="production_id" value="{{ production_id }}" />
-            <button type="submit">Firma abrufen</button>
-          </form>
-        {% endif %}
-      </div>
-
-      <div class="key">Production-ID</div>
-      <div>
-        {{ production_id or '—' }}
-        {% if production_id %}
-          <form method="post" style="display:inline">
-            <input type="hidden" name="action" value="fetch_production" />
-            <input type="hidden" name="entry_id" value="{{ entry_id }}" />
-            <input type="hidden" name="firma_id" value="{{ firma_id }}" />
-            <input type="hidden" name="production_id" value="{{ production_id }}" />
-            <button type="submit">Production abrufen</button>
-          </form>
-        {% endif %}
-      </div>
+  <!-- 1) Rechnung -->
+  <section class="card">
+    <h2>1) Rechnung abrufen</h2>
+    <div class="row">
+      <label for="invoiceId">Rechnungs-ID:</label>
+      <input id="invoiceId" type="text" placeholder="z. B. dch6FvUW">
+      <button id="btnLoadInvoice">Abrufen</button>
     </div>
-  </div>
+    <p class="hint">Gib die ID der Rechnung ein und klicke auf <em>Abrufen</em>.</p>
+    <p class="status" id="status-invoice"></p>
+    <details class="debug">
+      <summary>Kompletter Datensatz (Debug)</summary>
+      <pre id="debug-invoice" class="json"></pre>
+    </details>
+  </section>
 
-  <div class="hr"></div>
-  <h3>Meta (roh)</h3>
-  <pre>{{ invoice_meta_raw }}</pre>
+  <!-- 2) Firma -->
+  <section class="card">
+    <h2>2) Firma</h2>
+    <div class="row">
+      <div>Firma-ID: <span id="companyId">—</span></div>
+      <button id="btnLoadCompany">Firma abrufen</button>
+    </div>
+    <p class="status" id="status-company"></p>
+    <details class="debug">
+      <summary>Kompletter Datensatz (Debug)</summary>
+      <pre id="debug-company" class="json"></pre>
+    </details>
+  </section>
 
-  <h3>Kompletter Datensatz (Debug)</h3>
-  <pre>{{ invoice_bundle_raw }}</pre>
-{% endif %}
+  <!-- 3) Production -->
+  <section class="card">
+    <h2>3) Production</h2>
+    <div class="row">
+      <div>Production-ID: <span id="productionId">—</span></div>
+      <button id="btnLoadProduction">Production abrufen</button>
+    </div>
+    <p class="status" id="status-production"></p>
+    <details class="debug">
+      <summary>Kompletter Datensatz (Debug)</summary>
+      <pre id="debug-production" class="json"></pre>
+    </details>
+  </section>
 
-{% if firma_general %}
-  <div class="hr"></div>
-  <h2>2) Firma – Übersicht</h2>
-  <div class="kv">
-    <div class="key">ID</div><div>{{ firma_general.id }}</div>
-    <div class="key">Type</div><div>{{ firma_general.type }}</div>
-    <div class="key">Title</div><div>{{ firma_general.title }}</div>
-    <div class="key">Tags</div><div>{{ firma_general.tags|join(", ") }}</div>
-    <div class="key">Created</div><div>{{ firma_general.created_at }}</div>
-    <div class="key">Parent-ID</div><div>{{ firma_general.parent_id }}</div>
-    <div class="key">Pfad</div><div><code>{{ firma_general.path }}</code></div>
-  </div>
-  <p class="muted">Benutzte URL: <code>{{ firma_used_url }}</code></p>
+  <!-- 4) Kunde -->
+  <section class="card">
+    <h2>4) Kunde</h2>
+    <div class="row">
+      <div>Kunden-ID: <span id="customerId">—</span></div>
+      <button id="btnLoadCustomer">Kunde abrufen</button>
+    </div>
+    <p class="status" id="status-customer"></p>
+    <details class="debug">
+      <summary>Kompletter Datensatz (Debug)</summary>
+      <pre id="debug-customer" class="json"></pre>
+    </details>
+  </section>
 
-  <h3>Meta (roh)</h3>
-  <pre>{{ firma_meta_raw }}</pre>
+  <script>
+    // ---------- Helpers ----------
+    function setStatus(el, msg, isError=false){
+      el.textContent = msg || "";
+      el.style.color = isError ? "#b00020" : "#555";
+    }
+    function renderJson(preId, obj){
+      const pre = document.getElementById(preId);
+      pre.textContent = obj ? JSON.stringify(obj, null, 2) : "";
+    }
+    function setSpanText(id, value){
+      document.getElementById(id).textContent = value || "—";
+    }
+    function getSpanText(id){
+      const t = document.getElementById(id).textContent.trim();
+      return (t && t !== "—") ? t : "";
+    }
+    async function fetchJson(path){
+      const res = await fetch(path, {headers: {"Accept":"application/json"}});
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if(data && data.error) throw new Error(data.error);
+      return data;
+    }
 
-  <h3>Kompletter Datensatz (Debug)</h3> <!-- NEU -->
-  <pre>{{ firma_bundle_raw }}</pre>     <!-- NEU -->
-{% endif %}
+    // ---------- Ableitungslogik ----------
+    function deriveIdsFromInvoice(inv){
+      // Wir suchen in general.type_path nach "Firma" und "Production"
+      const typePath = (inv && inv.general && inv.general.type_path) || [];
+      let companyId = null, productionId = null;
+      for(const node of typePath){
+        if(node && node.type === "Firma") companyId = node.id || companyId;
+        if(node && node.type === "Production") productionId = node.id || productionId;
+      }
+      return { companyId, productionId };
+    }
 
-{% if production_general %}
-  <div class="hr"></div>
-  <h2>3) Production – Übersicht</h2>
-  <div class="kv">
-    <div class="key">ID</div><div>{{ production_general.id }}</div>
-    <div class="key">Type</div><div>{{ production_general.type }}</div>
-    <div class="key">Title</div><div>{{ production_general.title }}</div>
-    <div class="key">Tags</div><div>{{ production_general.tags|join(", ") }}</div>
-    <div class="key">Created</div><div>{{ production_general.created_at }}</div>
-    <div class="key">Parent-ID</div><div>{{ production_general.parent_id }}</div>
-    <div class="key">Pfad</div><div><code>{{ production_general.path }}</code></div>
-  </div>
-  <p class="muted">Benutzte URL: <code>{{ production_used_url }}</code></p>
+    function deriveCustomerFromProduction(prodJson){
+      // Kunde kommt aus references_to mit dst_type === "Kunde"
+      const refs = (prodJson && prodJson.references_to) || [];
+      const hit = refs.find(r => r && r.dst_type === "Kunde" && r.dst_id);
+      return hit ? hit.dst_id : null;
+    }
 
-  <h3>Meta (roh)</h3>
-  <pre>{{ production_meta_raw }}</pre>
+    // ---------- State im Frontend ----------
+    const state = {
+      invoice: null,
+      company: null,
+      production: null,
+      customer: null
+    };
 
-  <h3>Kompletter Datensatz (Debug)</h3> <!-- NEU -->
-  <pre>{{ production_bundle_raw }}</pre> <!-- NEU -->
-{% endif %}
-{% endblock %}
+    // ---------- DOM Elements ----------
+    const statusInvoice    = document.getElementById("status-invoice");
+    const statusCompany    = document.getElementById("status-company");
+    const statusProduction = document.getElementById("status-production");
+    const statusCustomer   = document.getElementById("status-customer");
+
+    // 1) Rechnung laden
+    document.getElementById("btnLoadInvoice").addEventListener("click", async () => {
+      const id = document.getElementById("invoiceId").value.trim();
+      if(!id){ alert("Bitte Rechnungs-ID eingeben."); return; }
+      setStatus(statusInvoice, "Lade Rechnung …");
+      try{
+        const data = await fetchJson(`/api/entry/${encodeURIComponent(id)}`);
+        state.invoice = data;
+        renderJson("debug-invoice", data);
+        setStatus(statusInvoice, "Rechnung geladen.");
+
+        // IDs ableiten und anzeigen
+        const { companyId, productionId } = deriveIdsFromInvoice(data);
+        if(companyId) setSpanText("companyId", companyId);
+        if(productionId) setSpanText("productionId", productionId);
+      }catch(e){
+        console.error(e);
+        setStatus(statusInvoice, "Fehler beim Abruf der Rechnung: " + e.message, true);
+      }
+    });
+
+    // 2) Firma abrufen
+    document.getElementById("btnLoadCompany").addEventListener("click", async () => {
+      const id = getSpanText("companyId");
+      if(!id){ alert("Keine Firma-ID bekannt. Bitte zuerst Rechnung laden."); return; }
+      setStatus(statusCompany, "Lade Firma …");
+      try{
+        const data = await fetchJson(`/api/entry/${encodeURIComponent(id)}`);
+        state.company = data;
+        renderJson("debug-company", data);
+        setStatus(statusCompany, "Firma geladen.");
+      }catch(e){
+        console.error(e);
+        setStatus(statusCompany, "Fehler beim Abruf der Firma: " + e.message, true);
+      }
+    });
+
+    // 3) Production abrufen
+    document.getElementById("btnLoadProduction").addEventListener("click", async () => {
+      const id = getSpanText("productionId");
+      if(!id){ alert("Keine Production-ID bekannt. Bitte zuerst Rechnung laden."); return; }
+      setStatus(statusProduction, "Lade Production …");
+      try{
+        const data = await fetchJson(`/api/entry/${encodeURIComponent(id)}`);
+        state.production = data;
+        renderJson("debug-production", data);
+        setStatus(statusProduction, "Production geladen.");
+
+        const custId = deriveCustomerFromProduction(data);
+        if(custId){
+          setSpanText("customerId", custId);
+        }
+      }catch(e){
+        console.error(e);
+        setStatus(statusProduction, "Fehler beim Abruf der Production: " + e.message, true);
+      }
+    });
+
+    // 4) Kunde abrufen
+    document.getElementById("btnLoadCustomer").addEventListener("click", async () => {
+      const id = getSpanText("customerId");
+      if(!id){ alert("Keine Kunden-ID bekannt. Bitte zuerst Production abrufen."); return; }
+      setStatus(statusCustomer, "Lade Kunde …");
+      try{
+        const data = await fetchJson(`/api/entry/${encodeURIComponent(id)}`);
+        state.customer = data;
+        renderJson("debug-customer", data);
+        setStatus(statusCustomer, "Kunde geladen.");
+      }catch(e){
+        console.error(e);
+        setStatus(statusCustomer, "Fehler beim Abruf des Kunden: " + e.message, true);
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,11 +1,11 @@
-from dotenv import load_dotenv
 from app import create_app
-
-# .env (optional) laden
-load_dotenv()
+import os
 
 app = create_app()
 
 if __name__ == "__main__":
-    # Port kannst du via ENV PORT überschreiben
-    app.run(host="0.0.0.0", port=5151, debug=True)
+    # Per Env überschreibbar:
+    host = os.environ.get("FLASK_HOST", "127.0.0.1")
+    port = int(os.environ.get("FLASK_PORT", "5151"))
+    debug = os.environ.get("FLASK_DEBUG", "1") == "1"
+    app.run(host=host, port=port, debug=debug)

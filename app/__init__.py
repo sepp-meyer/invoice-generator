@@ -1,17 +1,11 @@
 from flask import Flask
 from .config import Config
-from .routes.main import bp as main_bp
 
-def create_app(config_class: type[Config] = Config) -> Flask:
-    app = Flask(__name__)
-    app.config.from_object(config_class)
+def create_app():
+    app = Flask(__name__, template_folder="templates", static_folder="static")
+    app.config.from_object(Config)
 
-    # Blueprints
+    from .routes.main import bp as main_bp
     app.register_blueprint(main_bp)
-
-    # config in Jinja verfügbar machen ({{ config.XYZ }})
-    @app.context_processor
-    def inject_config():
-        return dict(config=app.config)
 
     return app
