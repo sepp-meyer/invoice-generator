@@ -1,13 +1,15 @@
 {% extends "base.html" %}
-{% block title %}Invoice Explorer (Text-Only){% endblock %}
+{% block title %}Invoice Explorer (Schritt-für-Schritt){% endblock %}
 
 {% block body %}
 <h1>Invoice Explorer (Text-Only)</h1>
 
+<!-- Schritt 1: Rechnungs-ID -->
 <form method="post">
-  <label for="entry_id">Entry-ID:</label>
+  <input type="hidden" name="action" value="fetch_invoice" />
+  <label for="entry_id">Rechnungs-ID:</label>
   <input id="entry_id" name="entry_id" type="text" placeholder="z. B. dch6FvUW" value="{{ entry_id|default('') }}" />
-  <button type="submit">Abrufen</button>
+  <button type="submit">Rechnung abrufen</button>
   <span class="muted">Backend: {{ config.ENTRY_HOST }}{{ config.SPACE_PREFIX }}</span>
 </form>
 
@@ -15,22 +17,102 @@
   <div class="box err"><strong>Fehler:</strong> {{ error }}</div>
 {% endif %}
 
-{% if minimal %}
+{% if invoice_general %}
   <div class="hr"></div>
-  <h2>Erkannte Minimalfelder</h2>
+  <h2>1) Rechnung – Übersicht</h2>
   <div class="kv">
-    {% for k, v in minimal.items() %}
+    <div class="key">ID</div><div>{{ invoice_general.id }}</div>
+    <div class="key">Type</div><div>{{ invoice_general.type }}</div>
+    <div class="key">Title</div><div>{{ invoice_general.title }}</div>
+    <div class="key">Tags</div><div>{{ invoice_general.tags|join(", ") }}</div>
+    <div class="key">Created</div><div>{{ invoice_general.created_at }}</div>
+    <div class="key">Parent-ID</div><div>{{ invoice_general.parent_id }}</div>
+    <div class="key">Pfad</div><div><code>{{ invoice_general.path }}</code></div>
+  </div>
+
+  <p class="muted">Benutzte URL: <code>{{ invoice_used_url }}</code></p>
+
+  <h3>Erkannte Minimalfelder</h3>
+  <div class="kv">
+    {% for k, v in invoice_minimal.items() %}
       <div class="key">{{ k }}</div><div>{{ v or '—' }}</div>
     {% endfor %}
   </div>
 
-  <p class="muted">Benutzte URL: <code>{{ used_url }}</code></p>
+  <div class="box" style="margin-top:1rem">
+    <strong>Gefundene Parent-IDs aus type_path</strong>
+    <div class="kv" style="margin-top:.5rem">
+      <div class="key">Firma-ID</div>
+      <div>
+        {{ firma_id or '—' }}
+        {% if firma_id %}
+          <form method="post" style="display:inline">
+            <input type="hidden" name="action" value="fetch_firma" />
+            <input type="hidden" name="entry_id" value="{{ entry_id }}" />
+            <input type="hidden" name="firma_id" value="{{ firma_id }}" />
+            <input type="hidden" name="production_id" value="{{ production_id }}" />
+            <button type="submit">Firma abrufen</button>
+          </form>
+        {% endif %}
+      </div>
+
+      <div class="key">Production-ID</div>
+      <div>
+        {{ production_id or '—' }}
+        {% if production_id %}
+          <form method="post" style="display:inline">
+            <input type="hidden" name="action" value="fetch_production" />
+            <input type="hidden" name="entry_id" value="{{ entry_id }}" />
+            <input type="hidden" name="firma_id" value="{{ firma_id }}" />
+            <input type="hidden" name="production_id" value="{{ production_id }}" />
+            <button type="submit">Production abrufen</button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
 
   <div class="hr"></div>
-  <h2>Meta (roh)</h2>
-  <pre>{{ meta_raw }}</pre>
+  <h3>Meta (roh)</h3>
+  <pre>{{ invoice_meta_raw }}</pre>
 
-  <h2>Kompletter Datensatz (Debug)</h2>
-  <pre>{{ bundle_raw }}</pre>
+  <h3>Kompletter Datensatz (Debug)</h3>
+  <pre>{{ invoice_bundle_raw }}</pre>
+{% endif %}
+
+{% if firma_general %}
+  <div class="hr"></div>
+  <h2>2) Firma – Übersicht</h2>
+  <div class="kv">
+    <div class="key">ID</div><div>{{ firma_general.id }}</div>
+    <div class="key">Type</div><div>{{ firma_general.type }}</div>
+    <div class="key">Title</div><div>{{ firma_general.title }}</div>
+    <div class="key">Tags</div><div>{{ firma_general.tags|join(", ") }}</div>
+    <div class="key">Created</div><div>{{ firma_general.created_at }}</div>
+    <div class="key">Parent-ID</div><div>{{ firma_general.parent_id }}</div>
+    <div class="key">Pfad</div><div><code>{{ firma_general.path }}</code></div>
+  </div>
+  <p class="muted">Benutzte URL: <code>{{ firma_used_url }}</code></p>
+
+  <h3>Meta (roh)</h3>
+  <pre>{{ firma_meta_raw }}</pre>
+{% endif %}
+
+{% if production_general %}
+  <div class="hr"></div>
+  <h2>3) Production – Übersicht</h2>
+  <div class="kv">
+    <div class="key">ID</div><div>{{ production_general.id }}</div>
+    <div class="key">Type</div><div>{{ production_general.type }}</div>
+    <div class="key">Title</div><div>{{ production_general.title }}</div>
+    <div class="key">Tags</div><div>{{ production_general.tags|join(", ") }}</div>
+    <div class="key">Created</div><div>{{ production_general.created_at }}</div>
+    <div class="key">Parent-ID</div><div>{{ production_general.parent_id }}</div>
+    <div class="key">Pfad</div><div><code>{{ production_general.path }}</code></div>
+  </div>
+  <p class="muted">Benutzte URL: <code>{{ production_used_url }}</code></p>
+
+  <h3>Meta (roh)</h3>
+  <pre>{{ production_meta_raw }}</pre>
 {% endif %}
 {% endblock %}

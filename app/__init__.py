@@ -9,4 +9,9 @@ def create_app(config_class: type[Config] = Config) -> Flask:
     # Blueprints
     app.register_blueprint(main_bp)
 
+    # config in Jinja verfügbar machen ({{ config.XYZ }})
+    @app.context_processor
+    def inject_config():
+        return dict(config=app.config)
+
     return app
