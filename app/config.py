@@ -1,12 +1,10 @@
 import os
+import secrets
 
-class Config:
-    # Bitte in Produktion per ENV setzen!
-    SECRET_KEY = os.environ.get("SECRET_KEY", "dev-change-me-please")
-
-    # Upstream deines EntryFrame/Space2-Backends:
-    # Standard: http://127.0.0.1:5050/space2
+class DefaultConfig:
+    # Basis deiner bestehenden Space2-App; gern anpassen:
     SERVICE_BASE = os.environ.get("SERVICE_BASE", "http://127.0.0.1:5050/space2")
+    REQUEST_TIMEOUT = float(os.environ.get("REQUEST_TIMEOUT", "5.0"))
 
-    # Requests-Timeout in Sekunden
-    REQUEST_TIMEOUT = float(os.environ.get("REQUEST_TIMEOUT", "6.0"))
+    # Für Flask-Session (wir nutzen sie nur minimal):
+    SECRET_KEY = os.environ.get("SECRET_KEY") or secrets.token_hex(16)

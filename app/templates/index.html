@@ -5,198 +5,187 @@
   <title>Invoice Data Explorer (MVP)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .grid { display:grid; gap:1rem; }
+    .row { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }
+    textarea { width:100%; min-height:220px; font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size:.9rem; }
+    .card { border:1px solid #ddd; border-radius:8px; padding:1rem; background:#fff; }
+    .muted { color:#666; font-size:.9rem; }
+    .ok { color:#0a7f27; }
+    .err { color:#b3052c; }
+    .hr { height:1px; background:#eee; margin:1rem 0; }
+    .sticky-footer { position:sticky; bottom:0; background:#fafafa; padding:.75rem 1rem; border-top:1px solid #eee; display:flex; gap:.5rem; }
+  </style>
 </head>
 <body>
   <h1>Invoice Data Explorer (MVP)</h1>
+  <p class="muted">Schrittweise IDs abrufen, Debug-Daten ansehen und am Ende die fertige Rechnung generieren.</p>
 
-  <!-- 1) Rechnung -->
-  <section class="card">
-    <h2>1) Rechnung abrufen</h2>
-    <div class="row">
-      <label for="invoiceId">Rechnungs-ID:</label>
-      <input id="invoiceId" type="text" placeholder="z. B. dch6FvUW">
-      <button id="btnLoadInvoice">Abrufen</button>
-    </div>
-    <p class="hint">Gib die ID der Rechnung ein und klicke auf <em>Abrufen</em>.</p>
-    <p class="status" id="status-invoice"></p>
-    <details class="debug">
-      <summary>Kompletter Datensatz (Debug)</summary>
-      <pre id="debug-invoice" class="json"></pre>
-    </details>
-  </section>
+  <div class="grid">
 
-  <!-- 2) Firma -->
-  <section class="card">
-    <h2>2) Firma</h2>
-    <div class="row">
-      <div>Firma-ID: <span id="companyId">—</span></div>
-      <button id="btnLoadCompany">Firma abrufen</button>
-    </div>
-    <p class="status" id="status-company"></p>
-    <details class="debug">
-      <summary>Kompletter Datensatz (Debug)</summary>
-      <pre id="debug-company" class="json"></pre>
-    </details>
-  </section>
+    <!-- 1) Rechnung -->
+    <section class="card">
+      <h2>1) Rechnung abrufen</h2>
+      <div class="row">
+        <label for="invoice_id">Rechnungs-ID:</label>
+        <input id="invoice_id" type="text" placeholder="z. B. dch6FvUW" style="min-width:260px;">
+        <button id="btn_fetch_invoice">Abrufen</button>
+        <span id="st_invoice" class="muted"></span>
+      </div>
+      <div class="hr"></div>
+      <h3>Kompletter Datensatz (Debug)</h3>
+      <textarea id="out_invoice" readonly></textarea>
+    </section>
 
-  <!-- 3) Production -->
-  <section class="card">
-    <h2>3) Production</h2>
-    <div class="row">
-      <div>Production-ID: <span id="productionId">—</span></div>
-      <button id="btnLoadProduction">Production abrufen</button>
-    </div>
-    <p class="status" id="status-production"></p>
-    <details class="debug">
-      <summary>Kompletter Datensatz (Debug)</summary>
-      <pre id="debug-production" class="json"></pre>
-    </details>
-  </section>
+    <!-- 2) Firma -->
+    <section class="card">
+      <h2>2) Firma</h2>
+      <div class="row">
+        <label for="company_id">Firma-ID:</label>
+        <input id="company_id" type="text" placeholder="—" style="min-width:260px;">
+        <button id="btn_fetch_company">Firma abrufen</button>
+        <span id="st_company" class="muted"></span>
+      </div>
+      <div class="hr"></div>
+      <h3>Kompletter Datensatz (Debug)</h3>
+      <textarea id="out_company" readonly></textarea>
+    </section>
 
-  <!-- 4) Kunde -->
-  <section class="card">
-    <h2>4) Kunde</h2>
-    <div class="row">
-      <div>Kunden-ID: <span id="customerId">—</span></div>
-      <button id="btnLoadCustomer">Kunde abrufen</button>
-    </div>
-    <p class="status" id="status-customer"></p>
-    <details class="debug">
-      <summary>Kompletter Datensatz (Debug)</summary>
-      <pre id="debug-customer" class="json"></pre>
-    </details>
-  </section>
+    <!-- 3) Production -->
+    <section class="card">
+      <h2>3) Production</h2>
+      <div class="row">
+        <label for="prod_id">Production-ID:</label>
+        <input id="prod_id" type="text" placeholder="—" style="min-width:260px;">
+        <button id="btn_fetch_prod">Production abrufen</button>
+        <span id="st_prod" class="muted"></span>
+      </div>
+      <div class="hr"></div>
+      <h3>Kompletter Datensatz (Debug)</h3>
+      <textarea id="out_prod" readonly></textarea>
+    </section>
+
+    <!-- 4) Kunde -->
+    <section class="card">
+      <h2>4) Kunde</h2>
+      <div class="row">
+        <label for="customer_id">Kunden-ID:</label>
+        <input id="customer_id" type="text" placeholder="—" style="min-width:260px;">
+        <button id="btn_fetch_customer">Kunde abrufen</button>
+        <span id="st_customer" class="muted"></span>
+      </div>
+      <div class="hr"></div>
+      <h3>Kompletter Datensatz (Debug)</h3>
+      <textarea id="out_customer" readonly></textarea>
+    </section>
+
+  </div>
+
+  <!-- Sticky Footer: Rechnung generieren -->
+  <div class="sticky-footer">
+    <form id="gen_form" action="{{ url_for('main.render_invoice') }}" method="get" target="_blank" class="row" style="gap:.5rem;">
+      <input type="hidden" name="invoice_id" id="gen_invoice_id">
+      <input type="hidden" name="company_id" id="gen_company_id">
+      <input type="hidden" name="prod_id" id="gen_prod_id">
+      <input type="hidden" name="customer_id" id="gen_customer_id">
+      <button id="btn_generate" type="submit">Rechnung generieren (neuer Tab)</button>
+      <span class="muted">Hinweis: Fehlende IDs werden – soweit möglich – aus der Rechnung/Production hergeleitet.</span>
+    </form>
+  </div>
 
   <script>
-    // ---------- Helpers ----------
-    function setStatus(el, msg, isError=false){
-      el.textContent = msg || "";
-      el.style.color = isError ? "#b00020" : "#555";
-    }
-    function renderJson(preId, obj){
-      const pre = document.getElementById(preId);
-      pre.textContent = obj ? JSON.stringify(obj, null, 2) : "";
-    }
-    function setSpanText(id, value){
-      document.getElementById(id).textContent = value || "—";
-    }
-    function getSpanText(id){
-      const t = document.getElementById(id).textContent.trim();
-      return (t && t !== "—") ? t : "";
-    }
-    async function fetchJson(path){
-      const res = await fetch(path, {headers: {"Accept":"application/json"}});
-      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    const $ = (s) => document.querySelector(s);
+    const out = (node, obj) => node.value = JSON.stringify(obj, null, 2);
+
+    async function fetchEntry(id) {
+      const res = await fetch(`/api/entry/${encodeURIComponent(id)}`);
       const data = await res.json();
-      if(data && data.error) throw new Error(data.error);
-      return data;
+      if (!data.ok) throw new Error(data.error || "Fetch failed");
+      return data.data;
     }
 
-    // ---------- Ableitungslogik ----------
-    function deriveIdsFromInvoice(inv){
-      // Wir suchen in general.type_path nach "Firma" und "Production"
-      const typePath = (inv && inv.general && inv.general.type_path) || [];
-      let companyId = null, productionId = null;
-      for(const node of typePath){
-        if(node && node.type === "Firma") companyId = node.id || companyId;
-        if(node && node.type === "Production") productionId = node.id || productionId;
-      }
-      return { companyId, productionId };
-    }
+    // 1) Invoice
+    $("#btn_fetch_invoice").addEventListener("click", async () => {
+      const id = $("#invoice_id").value.trim();
+      if (!id) return;
+      $("#st_invoice").textContent = "Lade…";
+      try {
+        const data = await fetchEntry(id);
+        out($("#out_invoice"), data);
+        $("#st_invoice").textContent = "OK";
+        $("#st_invoice").className = "ok";
 
-    function deriveCustomerFromProduction(prodJson){
-      // Kunde kommt aus references_to mit dst_type === "Kunde"
-      const refs = (prodJson && prodJson.references_to) || [];
-      const hit = refs.find(r => r && r.dst_type === "Kunde" && r.dst_id);
-      return hit ? hit.dst_id : null;
-    }
-
-    // ---------- State im Frontend ----------
-    const state = {
-      invoice: null,
-      company: null,
-      production: null,
-      customer: null
-    };
-
-    // ---------- DOM Elements ----------
-    const statusInvoice    = document.getElementById("status-invoice");
-    const statusCompany    = document.getElementById("status-company");
-    const statusProduction = document.getElementById("status-production");
-    const statusCustomer   = document.getElementById("status-customer");
-
-    // 1) Rechnung laden
-    document.getElementById("btnLoadInvoice").addEventListener("click", async () => {
-      const id = document.getElementById("invoiceId").value.trim();
-      if(!id){ alert("Bitte Rechnungs-ID eingeben."); return; }
-      setStatus(statusInvoice, "Lade Rechnung …");
-      try{
-        const data = await fetchJson(`/api/entry/${encodeURIComponent(id)}`);
-        state.invoice = data;
-        renderJson("debug-invoice", data);
-        setStatus(statusInvoice, "Rechnung geladen.");
-
-        // IDs ableiten und anzeigen
-        const { companyId, productionId } = deriveIdsFromInvoice(data);
-        if(companyId) setSpanText("companyId", companyId);
-        if(productionId) setSpanText("productionId", productionId);
-      }catch(e){
-        console.error(e);
-        setStatus(statusInvoice, "Fehler beim Abruf der Rechnung: " + e.message, true);
-      }
-    });
-
-    // 2) Firma abrufen
-    document.getElementById("btnLoadCompany").addEventListener("click", async () => {
-      const id = getSpanText("companyId");
-      if(!id){ alert("Keine Firma-ID bekannt. Bitte zuerst Rechnung laden."); return; }
-      setStatus(statusCompany, "Lade Firma …");
-      try{
-        const data = await fetchJson(`/api/entry/${encodeURIComponent(id)}`);
-        state.company = data;
-        renderJson("debug-company", data);
-        setStatus(statusCompany, "Firma geladen.");
-      }catch(e){
-        console.error(e);
-        setStatus(statusCompany, "Fehler beim Abruf der Firma: " + e.message, true);
-      }
-    });
-
-    // 3) Production abrufen
-    document.getElementById("btnLoadProduction").addEventListener("click", async () => {
-      const id = getSpanText("productionId");
-      if(!id){ alert("Keine Production-ID bekannt. Bitte zuerst Rechnung laden."); return; }
-      setStatus(statusProduction, "Lade Production …");
-      try{
-        const data = await fetchJson(`/api/entry/${encodeURIComponent(id)}`);
-        state.production = data;
-        renderJson("debug-production", data);
-        setStatus(statusProduction, "Production geladen.");
-
-        const custId = deriveCustomerFromProduction(data);
-        if(custId){
-          setSpanText("customerId", custId);
+        // Prefill company/prod IDs aus path
+        const p = (data.general?.path || "").split(".");
+        if (p.length >= 2) {
+          if (!$("#company_id").value) $("#company_id").value = p[0];
+          if (!$("#prod_id").value) $("#prod_id").value = p[1];
         }
-      }catch(e){
-        console.error(e);
-        setStatus(statusProduction, "Fehler beim Abruf der Production: " + e.message, true);
+      } catch (e) {
+        $("#st_invoice").textContent = e.message;
+        $("#st_invoice").className = "err";
       }
     });
 
-    // 4) Kunde abrufen
-    document.getElementById("btnLoadCustomer").addEventListener("click", async () => {
-      const id = getSpanText("customerId");
-      if(!id){ alert("Keine Kunden-ID bekannt. Bitte zuerst Production abrufen."); return; }
-      setStatus(statusCustomer, "Lade Kunde …");
-      try{
-        const data = await fetchJson(`/api/entry/${encodeURIComponent(id)}`);
-        state.customer = data;
-        renderJson("debug-customer", data);
-        setStatus(statusCustomer, "Kunde geladen.");
-      }catch(e){
-        console.error(e);
-        setStatus(statusCustomer, "Fehler beim Abruf des Kunden: " + e.message, true);
+    // 2) Company
+    $("#btn_fetch_company").addEventListener("click", async () => {
+      const id = $("#company_id").value.trim();
+      if (!id) return;
+      $("#st_company").textContent = "Lade…";
+      try {
+        const data = await fetchEntry(id);
+        out($("#out_company"), data);
+        $("#st_company").textContent = "OK";
+        $("#st_company").className = "ok";
+      } catch (e) {
+        $("#st_company").textContent = e.message;
+        $("#st_company").className = "err";
       }
+    });
+
+    // 3) Production
+    $("#btn_fetch_prod").addEventListener("click", async () => {
+      const id = $("#prod_id").value.trim();
+      if (!id) return;
+      $("#st_prod").textContent = "Lade…";
+      try {
+        const data = await fetchEntry(id);
+        out($("#out_prod"), data);
+        $("#st_prod").textContent = "OK";
+        $("#st_prod").className = "ok";
+
+        // Kunde aus references_to ziehen (dst_type == Kunde)
+        const refs = data.references_to || [];
+        const cust = refs.find(r => r.dst_type === "Kunde");
+        if (cust && !$("#customer_id").value) $("#customer_id").value = cust.dst_id;
+      } catch (e) {
+        $("#st_prod").textContent = e.message;
+        $("#st_prod").className = "err";
+      }
+    });
+
+    // 4) Customer
+    $("#btn_fetch_customer").addEventListener("click", async () => {
+      const id = $("#customer_id").value.trim();
+      if (!id) return;
+      $("#st_customer").textContent = "Lade…";
+      try {
+        const data = await fetchEntry(id);
+        out($("#out_customer"), data);
+        $("#st_customer").textContent = "OK";
+        $("#st_customer").className = "ok";
+      } catch (e) {
+        $("#st_customer").textContent = e.message;
+        $("#st_customer").className = "err";
+      }
+    });
+
+    // Generate: Hidden Felder füllen
+    $("#gen_form").addEventListener("submit", () => {
+      $("#gen_invoice_id").value  = $("#invoice_id").value.trim();
+      $("#gen_company_id").value  = $("#company_id").value.trim();
+      $("#gen_prod_id").value     = $("#prod_id").value.trim();
+      $("#gen_customer_id").value = $("#customer_id").value.trim();
     });
   </script>
 </body>

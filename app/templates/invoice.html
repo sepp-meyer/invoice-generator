@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Invoice</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <style>
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+.page {
+  position: relative;
+  width: 210mm;
+  min-height: 297mm;
+  padding: 20mm;
+  margin: 10mm auto;
+  border: 1px #D3D3D3 solid;
+  border-radius: 5px;
+  background: white;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 297mm;
+}
+.footer {
+  display: flex;
+  justify-content: center;
+  font-size: 8pt;
+  padding: 2mm 0;
+  box-sizing: border-box;
+}
+.footer-column {
+  flex: 1;
+  padding: 5px;
+  text-align: left;
+  margin: 0 10px;
+}
+.header {
+  height: 45mm;
+  text-align: right;
+}
+.header-text {
+  border: 5px solid black;
+  padding: 5px;
+  margin: 0;
+  display: inline-block;
+  text-transform: uppercase;
+}
+.info-block {
+  position: absolute;
+  top: 50mm;
+  left: 165mm;
+}
+.sender {
+  position: absolute;
+  top: 42mm;
+  left: 27mm;
+  font-size: 8pt;
+}
+.address-field {
+  position: absolute;
+  top: 45mm;
+  left: 27mm;
+  width: 85mm;
+  height: 40mm;
+}
+.invoice-number {
+  position: absolute;
+  top: 100mm;
+  left: 165mm;
+  font-size: 12pt;
+}
+.date-and-location {
+  position: absolute;
+  top: 120mm;
+  left: 165mm;
+  font-size: 12pt;
+}
+.subject {
+  margin-top: 50mm;
+  color: #019ebd
+}
+.letter {
+  margin-top: 0mm;
+  font-size: 10pt;
+}
+.attachments {
+  margin-top: mm;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th, td {
+  border: 1px solid black;
+  padding: 8px;
+}
+th {
+  background-color: #f2f2f2;
+}
+.info-table {
+  border-collapse: collapse;
+  width: 90%;
+}
+.info-table td {
+  border: none;
+  padding: 2px 5px;
+  vertical-align: top;
+}
+@page { margin: 12mm; }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <div class="header">
+      <!-- Logo area -->
+      <h1 class="header-text">{{ firm_header_text }}</h1>
+    </div>
+
+    <div class="info-block">
+      <!-- Information block -->
+      <p>
+        <strong>{{ firm_name }}</strong><br>
+        {{ firm_role }}<br>
+        {{ firm_street }}<br>
+        {{ firm_city }}<br><br>
+        Email: {{ firm_mail }}<br>
+        Phone: {{ firm_phone }}
+      </p>
+      {% if firm_taxid %}
+      Tax ID: {{ firm_taxid }}<p></p>
+      {% endif %}
+    </div>
+
+    <div class="sender">
+      <!-- Sender field -->
+      <p><strong>{{ firm_name }}</strong>
+      | {{ firm_street }} |
+      {{ firm_city }}</p>
+    </div>
+
+    <div class="address-field">
+      <!-- Address field -->
+      <p><strong>{{ cust_title }}</strong><br>
+      {{ cust_line1 }}<br>
+      {{ cust_line2 }}<br>
+      {{ cust_line3 }}</p>
+    </div>
+
+    <div class="invoice-number">
+      <strong>Invoice Number:</strong><br>
+      {{ inv_no }}
+    </div>
+
+    <div class="date-and-location">
+      {{ city }}{% if city and date_nice %}, {% endif %}{{ date_nice }}
+    </div>
+
+    <div class="subject">
+      <!-- Subject -->
+      <h2>{{ subject }}</h2>
+    </div>
+
+    <div class="letter">
+      <!-- Letter -->
+      <table class="info-table">
+        <tbody>
+          {% if production %}
+          <tr>
+            <td>Production:</td>
+            <td>{{ production }}</td>
+          </tr>
+          {% endif %}
+          {% if phase %}
+          <tr>
+            <td>Phase:</td>
+            <td>{{ phase }}</td>
+          </tr>
+          {% endif %}
+          {% if period %}
+          <tr>
+            <td>Period:</td>
+            <td>{{ period }}</td>
+          </tr>
+          {% endif %}
+          {% if extension %}
+          <tr>
+            <td>Extension:</td>
+            <td>{{ extension }}</td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
+
+      <h3>Service Description</h3>
+      <table>
+        <tbody>
+          <tr>
+            <th>Item</th>
+            <th>Quantity</th>
+            <th>Net Amount (€)</th>
+            <th>VAT (19%)</th>
+            <th>Gross Amount (€)</th>
+          </tr>
+          <tr>
+            <td>{{ item }}</td>
+            <td>{{ qty }}</td>
+            <td>{{ net_amt }}</td>
+            <td>{{ vat }}</td>
+            <td>{{ gross_amt }}</td>
+          </tr>
+          <tr>
+            <td colspan="4" style="text-align: right;"><strong>Total:</strong></td>
+            <td><strong>{{ total }}</strong></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p>{{ service_txt }}</p>
+      <p>I kindly request you to transfer the amount of €{{ total }} to the account detailed below. Please include the invoice number as the payment reference.</p>
+    </div>
+
+    <div class="attachments">
+      <h3></h3>
+      <br><br><strong>Many thanks for the trusting cooperation!</strong>
+    </div>
+
+    <footer class="footer">
+      <div class="footer-column"></div>
+      <br>* Under the small business regulation according to § 19 UStG, no sales tax is charged. Therefore, the display of VAT (19%) on the indicated prices is omitted. Reverse charge / VAT due to the recipient.
+      {% if bank %}
+      <div class="footer-column">
+        <p>
+          <strong>Account Holder<br></strong> {{ bank.holder }}<br>
+          <strong>Bank<br></strong> {{ bank.bank }}<br>
+          <strong>IBAN<br></strong> {{ bank.iban }}<br>
+          <strong>BIC<br></strong> {{ bank.bic }}
+        </p>
+      </div>
+      {% endif %}
+    </footer>
+
+  </div>
+</body>
+</html>

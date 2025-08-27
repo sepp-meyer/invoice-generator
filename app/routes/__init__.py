@@ -1,1 +1,2 @@
-# nur Marker für Paket
+from flask import Blueprint
+bp = Blueprint("main", __name__)
