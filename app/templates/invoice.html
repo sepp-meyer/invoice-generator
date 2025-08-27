@@ -39,10 +39,7 @@ body {
   text-align: left;
   margin: 0 10px;
 }
-.header {
-  height: 45mm;
-  text-align: right;
-}
+.header { height: 45mm; text-align: right; }
 .header-text {
   border: 5px solid black;
   padding: 5px;
@@ -50,67 +47,19 @@ body {
   display: inline-block;
   text-transform: uppercase;
 }
-.info-block {
-  position: absolute;
-  top: 50mm;
-  left: 165mm;
-}
-.sender {
-  position: absolute;
-  top: 42mm;
-  left: 27mm;
-  font-size: 8pt;
-}
-.address-field {
-  position: absolute;
-  top: 45mm;
-  left: 27mm;
-  width: 85mm;
-  height: 40mm;
-}
-.invoice-number {
-  position: absolute;
-  top: 100mm;
-  left: 165mm;
-  font-size: 12pt;
-}
-.date-and-location {
-  position: absolute;
-  top: 120mm;
-  left: 165mm;
-  font-size: 12pt;
-}
-.subject {
-  margin-top: 50mm;
-  color: #019ebd
-}
-.letter {
-  margin-top: 0mm;
-  font-size: 10pt;
-}
-.attachments {
-  margin-top: mm;
-}
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-th, td {
-  border: 1px solid black;
-  padding: 8px;
-}
-th {
-  background-color: #f2f2f2;
-}
-.info-table {
-  border-collapse: collapse;
-  width: 90%;
-}
-.info-table td {
-  border: none;
-  padding: 2px 5px;
-  vertical-align: top;
-}
+.info-block { position: absolute; top: 50mm; left: 165mm; }
+.sender { position: absolute; top: 42mm; left: 27mm; font-size: 8pt; }
+.address-field { position: absolute; top: 45mm; left: 27mm; width: 85mm; height: 40mm; }
+.invoice-number { position: absolute; top: 100mm; left: 165mm; font-size: 12pt; }
+.date-and-location { position: absolute; top: 120mm; left: 165mm; font-size: 12pt; }
+.subject { margin-top: 50mm; color: #019ebd }
+.letter { margin-top: 0mm; font-size: 10pt; }
+.attachments { margin-top: mm; }
+table { width: 100%; border-collapse: collapse; }
+th, td { border: 1px solid black; padding: 8px; }
+th { background-color: #f2f2f2; }
+.info-table { border-collapse: collapse; width: 90%; }
+.info-table td { border: none; padding: 2px 5px; vertical-align: top; }
 @page { margin: 12mm; }
   </style>
 </head>
@@ -118,12 +67,10 @@ th {
   <div class="page">
 
     <div class="header">
-      <!-- Logo area -->
       <h1 class="header-text">{{ firm_header_text }}</h1>
     </div>
 
     <div class="info-block">
-      <!-- Information block -->
       <p>
         <strong>{{ firm_name }}</strong><br>
         {{ firm_role }}<br>
@@ -138,14 +85,12 @@ th {
     </div>
 
     <div class="sender">
-      <!-- Sender field -->
       <p><strong>{{ firm_name }}</strong>
       | {{ firm_street }} |
       {{ firm_city }}</p>
     </div>
 
     <div class="address-field">
-      <!-- Address field -->
       <p><strong>{{ cust_title }}</strong><br>
       {{ cust_line1 }}<br>
       {{ cust_line2 }}<br>
@@ -162,37 +107,23 @@ th {
     </div>
 
     <div class="subject">
-      <!-- Subject -->
       <h2>{{ subject }}</h2>
     </div>
 
     <div class="letter">
-      <!-- Letter -->
       <table class="info-table">
         <tbody>
           {% if production %}
-          <tr>
-            <td>Production:</td>
-            <td>{{ production }}</td>
-          </tr>
+          <tr><td>Production:</td><td>{{ production }}</td></tr>
           {% endif %}
           {% if phase %}
-          <tr>
-            <td>Phase:</td>
-            <td>{{ phase }}</td>
-          </tr>
+          <tr><td>Phase:</td><td>{{ phase }}</td></tr>
           {% endif %}
           {% if period %}
-          <tr>
-            <td>Period:</td>
-            <td>{{ period }}</td>
-          </tr>
+          <tr><td>Period:</td><td>{{ period }}</td></tr>
           {% endif %}
           {% if extension %}
-          <tr>
-            <td>Extension:</td>
-            <td>{{ extension }}</td>
-          </tr>
+          <tr><td>Extension:</td><td>{{ extension }}</td></tr>
           {% endif %}
         </tbody>
       </table>
@@ -233,16 +164,14 @@ th {
     <footer class="footer">
       <div class="footer-column"></div>
       <br>* Under the small business regulation according to § 19 UStG, no sales tax is charged. Therefore, the display of VAT (19%) on the indicated prices is omitted. Reverse charge / VAT due to the recipient.
-      {% if bank %}
       <div class="footer-column">
         <p>
-          <strong>Account Holder<br></strong> {{ bank.holder }}<br>
-          <strong>Bank<br></strong> {{ bank.bank }}<br>
-          <strong>IBAN<br></strong> {{ bank.iban }}<br>
-          <strong>BIC<br></strong> {{ bank.bic }}
+          <strong>Account Holder<br></strong> {{ bank.holder if bank else "" }}<br>
+          <strong>Bank<br></strong> {{ bank.bank if bank else "" }}<br>
+          <strong>IBAN<br></strong> {% if bank and bank.iban_html %}{{ bank.iban_html|safe }}{% endif %}<br>
+          <strong>BIC<br></strong> {{ bank.bic if bank else "" }}
         </p>
       </div>
-      {% endif %}
     </footer>
 
   </div>

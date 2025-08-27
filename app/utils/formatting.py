@@ -6,7 +6,6 @@ MONTHS_EN = [
 ]
 
 def ordinal_en(n: int) -> str:
-    # 1->1st, 2->2nd, 3->3rd, 4->4th ...
     if 10 <= n % 100 <= 20:
         suffix = "th"
     else:
@@ -14,7 +13,6 @@ def ordinal_en(n: int) -> str:
     return f"{n}{suffix}"
 
 def format_english_date(yyyymmdd: str) -> str:
-    # "2025-08-01" -> "August 1st, 2025"
     try:
         d = datetime.strptime(yyyymmdd, "%Y-%m-%d")
         return f"{MONTHS_EN[d.month]} {ordinal_en(d.day)}, {d.year}"
@@ -30,7 +28,6 @@ def meta_first(entry: dict, key: str, default: str = "") -> str:
         return default
 
 def euro2(value) -> str:
-    # "600" -> "600.00"
     try:
         return f"{float(value):.2f}"
     except Exception:
@@ -39,8 +36,19 @@ def euro2(value) -> str:
         except Exception:
             return str(value)
 
+def format_iban_html(iban: str) -> str:
+    """
+    Formatiert eine IBAN in 4er-Gruppen mit &nbsp; (non-breaking):
+    'DE48500105175412821655' -> 'DE48&nbsp;5001&nbsp;0517&nbsp;5412&nbsp;8216&nbsp;55'
+    Nimmt auch bereits gruppierte Eingaben entgegen.
+    """
+    raw = "".join(str(iban).split())
+    if not raw:
+        return ""
+    groups = [raw[i:i+4] for i in range(0, len(raw), 4)]
+    return "&nbsp;".join(groups)
+
 def derive_company_id_from_invoice(inv: dict) -> str | None:
-    # path like "sE68dmVD.5XxZlp0J.7ZZRRPBT.dch6FvUW" -> first is company
     p = inv.get("general", {}).get("path", "")
     parts = p.split(".")
     return parts[0] if len(parts) >= 1 and parts[0] else None
@@ -51,7 +59,6 @@ def derive_prod_id_from_invoice(inv: dict) -> str | None:
     return parts[1] if len(parts) >= 2 and parts[1] else None
 
 def derive_customer_id_from_prod(prod: dict) -> str | None:
-    # search production.references_to for dst_type == "Kunde"
     for ref in prod.get("references_to", []):
         if ref.get("dst_type") == "Kunde":
             return ref.get("dst_id")
