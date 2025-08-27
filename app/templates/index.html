@@ -96,6 +96,9 @@
 
   <h3>Meta (roh)</h3>
   <pre>{{ firma_meta_raw }}</pre>
+
+  <h3>Kompletter Datensatz (Debug)</h3> <!-- NEU -->
+  <pre>{{ firma_bundle_raw }}</pre>     <!-- NEU -->
 {% endif %}
 
 {% if production_general %}
@@ -114,5 +117,8 @@
 
   <h3>Meta (roh)</h3>
   <pre>{{ production_meta_raw }}</pre>
+
+  <h3>Kompletter Datensatz (Debug)</h3> <!-- NEU -->
+  <pre>{{ production_bundle_raw }}</pre> <!-- NEU -->
 {% endif %}
 {% endblock %}

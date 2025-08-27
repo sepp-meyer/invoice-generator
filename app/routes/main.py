@@ -42,11 +42,13 @@ def index():
         "firma_used_url": "",
         "firma_general": None,
         "firma_meta_raw": "",
+        "firma_bundle_raw": "",
 
         # Production
         "production_used_url": "",
         "production_general": None,
         "production_meta_raw": "",
+        "production_bundle_raw": "",
 
         # Fehler
         "error": "",
@@ -88,6 +90,7 @@ def index():
             ctx["firma_used_url"] = firm_url
             ctx["firma_general"] = extract_general_summary(firm_bundle)
             ctx["firma_meta_raw"] = json.dumps(firm_meta, indent=2, ensure_ascii=False)
+            ctx["firma_bundle_raw"] = json.dumps(firm_bundle, indent=2, ensure_ascii=False)
 
             # damit die Buttons sichtbar bleiben, reichen wir IDs wieder durch
             ctx["entry_id"] = (request.form.get("entry_id") or "").strip()
@@ -105,6 +108,7 @@ def index():
             ctx["production_used_url"] = prod_url
             ctx["production_general"] = extract_general_summary(prod_bundle)
             ctx["production_meta_raw"] = json.dumps(prod_meta, indent=2, ensure_ascii=False)
+            ctx["production_bundle_raw"] = json.dumps(prod_bundle, indent=2, ensure_ascii=False)
 
             # IDs zurückreichen
             ctx["entry_id"] = (request.form.get("entry_id") or "").strip()
