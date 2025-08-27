@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Invoice Explorer (Text-Only){% endblock %}
+
+{% block body %}
+<h1>Invoice Explorer (Text-Only)</h1>
+
+<form method="post">
+  <label for="entry_id">Entry-ID:</label>
+  <input id="entry_id" name="entry_id" type="text" placeholder="z. B. dch6FvUW" value="{{ entry_id|default('') }}" />
+  <button type="submit">Abrufen</button>
+  <span class="muted">Backend: {{ config.ENTRY_HOST }}{{ config.SPACE_PREFIX }}</span>
+</form>
+
+{% if error %}
+  <div class="box err"><strong>Fehler:</strong> {{ error }}</div>
+{% endif %}
+
+{% if minimal %}
+  <div class="hr"></div>
+  <h2>Erkannte Minimalfelder</h2>
+  <div class="kv">
+    {% for k, v in minimal.items() %}
+      <div class="key">{{ k }}</div><div>{{ v or '—' }}</div>
+    {% endfor %}
+  </div>
+
+  <p class="muted">Benutzte URL: <code>{{ used_url }}</code></p>
+
+  <div class="hr"></div>
+  <h2>Meta (roh)</h2>
+  <pre>{{ meta_raw }}</pre>
+
+  <h2>Kompletter Datensatz (Debug)</h2>
+  <pre>{{ bundle_raw }}</pre>
+{% endif %}
+{% endblock %}
