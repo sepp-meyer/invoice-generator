@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8"/>
+  <title>{{ title or "Fehler" }} – Invoice Generator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .center { max-width: 800px; margin: 4rem auto; }
+    .card { border:1px solid #ddd; border-radius:10px; background:#fff; padding:1.25rem; }
+    .muted { color:#666; }
+    .actions { display:flex; gap:.5rem; flex-wrap:wrap; margin-top: .75rem; }
+    .btn { padding:.5rem .8rem; border:1px solid #ccc; border-radius:6px; background:#f7f7fa; cursor:pointer; text-decoration:none; color:#111; }
+    .btn-primary { border-color:#0b64a0; background:#0d81cf; color:#fff; }
+    .btn-primary:hover { background:#0b64a0; }
+  </style>
+</head>
+<body>
+  <div class="center">
+    <div class="card">
+      <h1 style="margin:0 0 .25rem">{{ headline or "Es ist ein Fehler aufgetreten" }}</h1>
+      {% if status_code %}<p class="muted" style="margin:.25rem 0">Status: {{ status_code }}</p>{% endif %}
+      <p style="margin:.75rem 0">{{ message or "Bitte später erneut versuchen." }}</p>
+
+      {% if tips %}
+        <ul>
+          {% for t in tips %}<li>{{ t }}</li>{% endfor %}
+        </ul>
+      {% endif %}
+
+      <div class="actions">
+        <a class="btn" href="{{ url_for('main.index') }}">Zur Startseite</a>
+        <a class="btn btn-primary" href="{{ url_for('main.index') }}#settings">Einstellungen öffnen</a>
+        <button class="btn" onclick="history.back()">Zurück</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

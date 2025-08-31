@@ -63,6 +63,8 @@ def api_entry(entry_id):
         return jsonify({"ok": False, "error": str(e)}), 400
 
 # -------- Render final invoice (new tab) --------
+
+
 @bp.get("/render_invoice")
 def render_invoice():
     invoice_id  = (request.args.get("invoice_id") or "").strip()
@@ -71,10 +73,51 @@ def render_invoice():
     customer_id = (request.args.get("customer_id") or "").strip()
 
     if not invoice_id:
-        return "Missing invoice_id", 400
+        return render_template(
+            "error.html",
+            title="Fehlende Parameter",
+            headline="Fehlende Parameter",
+            message="Es fehlt die Rechnungs-ID.",
+            status_code=400
+        ), 400
 
-    # 1) Rechnung
-    invoice = fetch_entry(invoice_id)
+    # Vor dem ersten Call: existiert überhaupt ein Token?
+    if not resolve_token():
+        return render_template(
+            "error.html",
+            title="Kein Token gesetzt",
+            headline="Nicht autorisiert",
+            message="Es ist kein API-Token hinterlegt.",
+            status_code=401,
+            tips=[
+                "Öffne die Einstellungen und trage einen gültigen Token ein.",
+                "Falls der Token in EntryFrame abgelaufen ist: neuen Token erzeugen und hier eintragen."
+            ],
+        ), 401
+
+    # 1) Rechnung laden (mit sauberem Fehlerbild)
+    try:
+        invoice = fetch_entry(invoice_id)
+    except PermissionError as e:
+        return render_template(
+            "error.html",
+            title="Nicht autorisiert",
+            headline="Nicht autorisiert (401)",
+            message=str(e),
+            status_code=401,
+            tips=[
+                "Token prüfen (Tipp: in Einstellungen neu speichern).",
+                "In EntryFrame Admin ggf. Token reaktivieren oder neu generieren.",
+            ],
+        ), 401
+    except Exception as e:
+        return render_template(
+            "error.html",
+            title="Abruf fehlgeschlagen",
+            headline="Rechnung konnte nicht geladen werden",
+            message=f"{e}",
+            status_code=400
+        ), 400
 
     # 2) Firma/Production ableiten
     if not company_id:
@@ -82,15 +125,43 @@ def render_invoice():
     if not prod_id:
         prod_id = derive_prod_id_from_invoice(invoice) or ""
 
-    company = fetch_entry(company_id) if company_id else None
-    prod    = fetch_entry(prod_id) if prod_id else None
+    def _safe_fetch(label, eid):
+        if not eid:
+            return None, None
+        try:
+            return fetch_entry(eid), None
+        except PermissionError as e:
+            return None, render_template(
+                "error.html",
+                title="Nicht autorisiert",
+                headline="Nicht autorisiert (401)",
+                message=f"{label} ({eid}) konnte nicht geladen werden: {e}",
+                status_code=401,
+                tips=[
+                    "Token prüfen/erneuern und erneut versuchen.",
+                    "Stimmt der Zugriffsumfang (Scope) dieses Tokens?"
+                ],
+            ), 401
+        except Exception as e:
+            return None, render_template(
+                "error.html",
+                title="Abruf fehlgeschlagen",
+                headline=f"{label} konnte nicht geladen werden",
+                message=f"{e}",
+                status_code=400
+            ), 400
+
+    company, err = _safe_fetch("Firma", company_id)
+    if err: return err
+    prod, err = _safe_fetch("Production", prod_id)
+    if err: return err
 
     # 3) Kunde ableiten
-    if not customer_id and prod:
-        customer_id = derive_customer_id_from_prod(prod) or ""
-    customer = fetch_entry(customer_id) if customer_id else None
+    customer_id = customer_id or (derive_customer_id_from_prod(prod) if prod else "") or ""
+    customer, err = _safe_fetch("Kunde", customer_id)
+    if err: return err
 
-    # ---- Map Daten ----
+    # ---- Map Daten ---- (unverändert)
     firm_title  = (company or {}).get("general", {}).get("title", "") or "—"
     firm_name   = meta_first(company, "Adresse_1", "")
     firm_street = meta_first(company, "Adresse_2", "")
