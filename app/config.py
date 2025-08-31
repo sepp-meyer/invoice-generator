@@ -18,6 +18,3 @@ class DefaultConfig:
         "TOKEN_FILE",
         os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "bearer_token.txt"))
     )
-
-    # Strikt nur Bridge verwenden
-    FORCE_BRIDGE = True
