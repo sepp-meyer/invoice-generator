@@ -13,10 +13,8 @@ from app.utils.formatting import (
 # -------- Index / Settings --------
 @bp.route("/", methods=["GET"])
 def index():
-    # Aktuelle Settings zusammentragen
     base_eff = resolve_service_base(current_app.config["SERVICE_BASE"])
     tok_eff = resolve_token() or ""
-    # Maskierter Token für Anzeige
     tok_mask = (tok_eff[:4] + "…" + tok_eff[-4:]) if len(tok_eff) >= 10 else (tok_eff or "—")
     persisted = True if (read_persisted_token() or "") else False
     return render_template("index.html",
@@ -33,24 +31,29 @@ def save_settings():
     else:
         session.pop("service_base", None)
 
-    # Token
-    token = (request.form.get("bridge_token") or "").strip()
+    # API Token (Bearer)
+    token = (request.form.get("api_token") or request.form.get("bridge_token") or "").strip()
     remember = bool(request.form.get("remember"))
+
     if token:
-        session["bridge_token"] = token
+        # Neuer Session-Key
+        session["api_token"] = token
+        # Alte Session-Key bereinigen (optional)
+        session.pop("bridge_token", None)
         if remember:
             write_persisted_token(token)
         else:
             write_persisted_token(None)
     else:
-        # Leerer Token => aus Session entfernen & optional Datei löschen
+        # Token entfernen
+        session.pop("api_token", None)
         session.pop("bridge_token", None)
         if remember:
             write_persisted_token(None)
 
     return redirect(url_for("main.index", saved="1"))
 
-# -------- JSON helper endpoints (wie bisher) --------
+# -------- JSON helper endpoints --------
 @bp.get("/api/entry/<entry_id>")
 def api_entry(entry_id):
     try:
@@ -88,7 +91,6 @@ def render_invoice():
     customer = fetch_entry(customer_id) if customer_id else None
 
     # ---- Map Daten ----
-    # Firma
     firm_title  = (company or {}).get("general", {}).get("title", "") or "—"
     firm_name   = meta_first(company, "Adresse_1", "")
     firm_street = meta_first(company, "Adresse_2", "")
@@ -98,13 +100,11 @@ def render_invoice():
     firm_phone  = meta_first(company, "Telefon", "")
     firm_taxid  = meta_first(company, "Tax-ID", "")
 
-    # Kunde
     cust_title  = (customer or {}).get("general", {}).get("title", "") or ""
     cust_line1  = meta_first(customer, "Adresse_1", "")
     cust_line2  = meta_first(customer, "Adresse_2", "")
     cust_line3  = meta_first(customer, "Adresse_3", "")
 
-    # Rechnung
     inv_no      = meta_first(invoice, "Rechnungs-Nr", "")
     city        = meta_first(invoice, "Stadt", "")
     date_raw    = meta_first(invoice, "date", "")
@@ -122,14 +122,12 @@ def render_invoice():
     total       = euro2(meta_first(invoice, "Total", ""))
     service_txt = meta_first(invoice, "service_Text", "")
 
-    # Bank (aus Firma)
     bank = None
     if company:
         bank_name = meta_first(company, "Bank", "")
         iban_raw  = meta_first(company, "IBAN", "")
         bic       = meta_first(company, "BIC", "")
-        holder    = firm_name  # Account Holder = Adresse_1[0]
-
+        holder    = firm_name
         if bank_name or iban_raw or bic or holder:
             bank = {
                 "holder": holder,

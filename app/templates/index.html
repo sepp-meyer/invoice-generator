@@ -37,8 +37,8 @@
         <input name="service_base" type="text" style="min-width:360px"
                value="{{ service_base_value }}">
       </label>
-      <label>Bridge-Token:
-        <input name="bridge_token" type="password" style="min-width:320px" placeholder="neuen Token eingeben">
+      <label>API Token (Bearer):
+        <input name="api_token" type="password" style="min-width:320px" placeholder="neuen Token eingeben">
       </label>
       <label style="display:flex; align-items:center; gap:.35rem;">
         <input type="checkbox" name="remember" {% if has_persisted %}checked{% endif %}>
@@ -47,12 +47,13 @@
       <button type="submit">Speichern</button>
       <span class="pill">aktuell: {{ token_mask }}</span>
     </form>
-    <p class="muted">Hinweis: Wenn gesetzt, wird der Token als <code>X-Bridge-Token</code> an die Bridge-Endpoints übermittelt.
-      Ohne Token werden ggf. die offenen Fallback-Endpoints versucht.</p>
+    <p class="muted">
+      Der Client spricht ausschließlich den Bridge-Endpoint an und sendet den Token im Header
+      <code>Authorization: Bearer &lt;token&gt;</code>. Es gibt keine offenen Fallback-Routen.
+    </p>
   </section>
 
   <div class="grid">
-
     <!-- 1) Rechnung -->
     <section class="card">
       <h2>1) Rechnung abrufen</h2>
@@ -108,7 +109,6 @@
       <h3>Kompletter Datensatz (Debug)</h3>
       <textarea id="out_customer" readonly></textarea>
     </section>
-
   </div>
 
   <!-- Sticky Footer: Rechnung generieren -->
@@ -134,6 +134,19 @@
       return data.data;
     }
 
+    function requireToken() {
+      const pill = document.querySelector('.pill');
+      const hasToken = pill && pill.textContent && pill.textContent.trim() !== '—';
+      if (!hasToken) {
+        document.querySelectorAll('button[id^="btn_fetch_"]').forEach(b => b.disabled = true);
+        const warn = document.createElement('p');
+        warn.className = 'err';
+        warn.textContent = 'Kein API-Token gesetzt. Bitte zuerst in den Einstellungen speichern.';
+        document.querySelector('section.card').prepend(warn);
+      }
+    }
+    requireToken();
+
     // 1) Invoice
     $("#btn_fetch_invoice").addEventListener("click", async () => {
       const id = $("#invoice_id").value.trim();
@@ -146,7 +159,6 @@
         $("#st_invoice").textContent = "OK";
         $("#st_invoice").className = "ok";
 
-        // Prefill company/prod IDs aus path
         const p = (data.general?.path || "").split(".");
         if (p.length >= 2) {
           if (!$("#company_id").value) $("#company_id").value = p[0];
@@ -187,7 +199,6 @@
         $("#st_prod").textContent = "OK";
         $("#st_prod").className = "ok";
 
-        // Kunde aus references_to ziehen (dst_type == Kunde)
         const refs = data.references_to || [];
         const cust = refs.find(r => r.dst_type === "Kunde");
         if (cust && !$("#customer_id").value) $("#customer_id").value = cust.dst_id;
