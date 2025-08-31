@@ -15,11 +15,41 @@
     .err { color:#b3052c; }
     .hr { height:1px; background:#eee; margin:1rem 0; }
     .sticky-footer { position:sticky; bottom:0; background:#fafafa; padding:.75rem 1rem; border-top:1px solid #eee; display:flex; gap:.5rem; }
+    input[type="text"], input[type="password"] { padding:.45rem .6rem; border:1px solid #ccc; border-radius:6px; }
+    button { padding:.5rem .8rem; border:1px solid #0b64a0; background:#0d81cf; color:#fff; border-radius:6px; cursor:pointer; }
+    button:hover { background:#0b64a0; }
+    .pill { display:inline-block; background:#f4f6f9; border:1px solid #e2e6ee; border-radius:999px; padding:.2rem .6rem; font-size:.85rem; }
   </style>
 </head>
 <body>
   <h1>Invoice Data Explorer (MVP)</h1>
   <p class="muted">Schrittweise IDs abrufen, Debug-Daten ansehen und am Ende die fertige Rechnung generieren.</p>
+
+  {% if request.args.get('saved') %}
+    <p class="ok">Einstellungen gespeichert.</p>
+  {% endif %}
+
+  <!-- Einstellungen -->
+  <section class="card">
+    <h2>Einstellungen</h2>
+    <form method="post" action="{{ url_for('main.save_settings') }}" class="row" style="gap:.5rem;">
+      <label>Service-Base&nbsp;URL:
+        <input name="service_base" type="text" style="min-width:360px"
+               value="{{ service_base_value }}">
+      </label>
+      <label>Bridge-Token:
+        <input name="bridge_token" type="password" style="min-width:320px" placeholder="neuen Token eingeben">
+      </label>
+      <label style="display:flex; align-items:center; gap:.35rem;">
+        <input type="checkbox" name="remember" {% if has_persisted %}checked{% endif %}>
+        dauerhaft speichern
+      </label>
+      <button type="submit">Speichern</button>
+      <span class="pill">aktuell: {{ token_mask }}</span>
+    </form>
+    <p class="muted">Hinweis: Wenn gesetzt, wird der Token als <code>X-Bridge-Token</code> an die Bridge-Endpoints übermittelt.
+      Ohne Token werden ggf. die offenen Fallback-Endpoints versucht.</p>
+  </section>
 
   <div class="grid">
 
@@ -109,6 +139,7 @@
       const id = $("#invoice_id").value.trim();
       if (!id) return;
       $("#st_invoice").textContent = "Lade…";
+      $("#st_invoice").className = "muted";
       try {
         const data = await fetchEntry(id);
         out($("#out_invoice"), data);
@@ -132,6 +163,7 @@
       const id = $("#company_id").value.trim();
       if (!id) return;
       $("#st_company").textContent = "Lade…";
+      $("#st_company").className = "muted";
       try {
         const data = await fetchEntry(id);
         out($("#out_company"), data);
@@ -148,6 +180,7 @@
       const id = $("#prod_id").value.trim();
       if (!id) return;
       $("#st_prod").textContent = "Lade…";
+      $("#st_prod").className = "muted";
       try {
         const data = await fetchEntry(id);
         out($("#out_prod"), data);
@@ -169,6 +202,7 @@
       const id = $("#customer_id").value.trim();
       if (!id) return;
       $("#st_customer").textContent = "Lade…";
+      $("#st_customer").className = "muted";
       try {
         const data = await fetchEntry(id);
         out($("#out_customer"), data);

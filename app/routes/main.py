@@ -1,17 +1,54 @@
 from flask import render_template, request, jsonify, session, current_app, redirect, url_for
 from . import bp
 from app.services.entry_api import fetch_entry
+from app.services.token_store import (
+    resolve_token, resolve_service_base, write_persisted_token, read_persisted_token
+)
 from app.utils.formatting import (
     meta_first, euro2, format_english_date,
     derive_company_id_from_invoice, derive_prod_id_from_invoice,
     derive_customer_id_from_prod, format_iban_html
 )
 
-
-# -------- Index --------
+# -------- Index / Settings --------
 @bp.route("/", methods=["GET"])
 def index():
-    return render_template("index.html")
+    # Aktuelle Settings zusammentragen
+    base_eff = resolve_service_base(current_app.config["SERVICE_BASE"])
+    tok_eff = resolve_token() or ""
+    # Maskierter Token für Anzeige
+    tok_mask = (tok_eff[:4] + "…" + tok_eff[-4:]) if len(tok_eff) >= 10 else (tok_eff or "—")
+    persisted = True if (read_persisted_token() or "") else False
+    return render_template("index.html",
+                           service_base_value=base_eff,
+                           token_mask=tok_mask,
+                           has_persisted=persisted)
+
+@bp.post("/settings")
+def save_settings():
+    # Service-Base
+    base = (request.form.get("service_base") or "").strip().rstrip("/")
+    if base:
+        session["service_base"] = base
+    else:
+        session.pop("service_base", None)
+
+    # Token
+    token = (request.form.get("bridge_token") or "").strip()
+    remember = bool(request.form.get("remember"))
+    if token:
+        session["bridge_token"] = token
+        if remember:
+            write_persisted_token(token)
+        else:
+            write_persisted_token(None)
+    else:
+        # Leerer Token => aus Session entfernen & optional Datei löschen
+        session.pop("bridge_token", None)
+        if remember:
+            write_persisted_token(None)
+
+    return redirect(url_for("main.index", saved="1"))
 
 # -------- JSON helper endpoints (wie bisher) --------
 @bp.get("/api/entry/<entry_id>")
