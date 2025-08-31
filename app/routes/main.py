@@ -32,7 +32,7 @@ def save_settings():
         session.pop("service_base", None)
 
     # API Token (Bearer)
-    token = (request.form.get("api_token") or request.form.get("bridge_token") or "").strip()
+    token = (request.form.get("api_token") or "").strip()
     remember = bool(request.form.get("remember"))
 
     if token:
@@ -47,7 +47,6 @@ def save_settings():
     else:
         # Token entfernen
         session.pop("api_token", None)
-        session.pop("bridge_token", None)
         if remember:
             write_persisted_token(None)
 

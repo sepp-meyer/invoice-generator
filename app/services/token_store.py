@@ -38,28 +38,16 @@ def resolve_service_base(default_base: str) -> str:
     return (default_base or "").strip().rstrip("/")
 
 def resolve_token() -> str | None:
-    """
-    Bevorzugt einheitlich 'api_token' in der Session.
-    Akzeptiert legacy 'bridge_token' + ENV-Fallbacks, um Migration zu erleichtern.
-    """
-    # 1) Request-Session
+    # 1) Session
     if has_request_context():
         t = (session.get("api_token") or "").strip()
         if t:
             return t
-        # Legacy Key (falls UI noch nicht aktualisiert war)
-        t_legacy = (session.get("bridge_token") or "").strip()
-        if t_legacy:
-            return t_legacy
-
-    # 2) Persistente Datei
+    # 2) Datei
     t = read_persisted_token()
     if t:
         return t.strip()
-
-    # 3) ENV/Config
+    # 3) ENV
     t = (current_app.config.get("API_BEARER_TOKEN") or "").strip()
-    if t:
-        return t
-    t = (current_app.config.get("LEGACY_BRIDGE_TOKEN") or "").strip()
     return t or None
+

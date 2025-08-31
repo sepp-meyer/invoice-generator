@@ -16,7 +16,7 @@ class DefaultConfig:
     # Persistenter Speicherort für den Token (einfache Textdatei)
     TOKEN_FILE = os.environ.get(
         "TOKEN_FILE",
-        os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "bridge_token.txt"))
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "bearer_token.txt"))
     )
 
     # Strikt nur Bridge verwenden
