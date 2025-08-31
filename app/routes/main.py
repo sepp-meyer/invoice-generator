@@ -2,7 +2,7 @@ from flask import render_template, request, jsonify, session, current_app, redir
 from . import bp
 from app.services.entry_api import fetch_entry
 from app.services.token_store import (
-    resolve_token, resolve_service_base, write_persisted_token, read_persisted_token
+    resolve_token, resolve_service_base, write_persisted_token, read_persisted_token, coerce_https
 )
 from app.utils.formatting import (
     meta_first, euro2, format_english_date,
@@ -24,8 +24,10 @@ def index():
 
 @bp.post("/settings")
 def save_settings():
-    # Service-Base
-    base = (request.form.get("service_base") or "").strip().rstrip("/")
+    # Service-Base (gleich beim Speichern auf https „biegen“, außer localhost)
+    base_raw = (request.form.get("service_base") or "").strip()
+    base = coerce_https(base_raw)
+    base = base.rstrip("/")
     if base:
         session["service_base"] = base
     else:
@@ -36,16 +38,13 @@ def save_settings():
     remember = bool(request.form.get("remember"))
 
     if token:
-        # Neuer Session-Key
         session["api_token"] = token
-        # Alte Session-Key bereinigen (optional)
         session.pop("bridge_token", None)
         if remember:
             write_persisted_token(token)
         else:
             write_persisted_token(None)
     else:
-        # Token entfernen
         session.pop("api_token", None)
         if remember:
             write_persisted_token(None)
@@ -62,8 +61,6 @@ def api_entry(entry_id):
         return jsonify({"ok": False, "error": str(e)}), 400
 
 # -------- Render final invoice (new tab) --------
-
-
 @bp.get("/render_invoice")
 def render_invoice():
     invoice_id  = (request.args.get("invoice_id") or "").strip()

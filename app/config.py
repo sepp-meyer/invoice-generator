@@ -3,6 +3,7 @@ import secrets
 
 class DefaultConfig:
     # Ziel deiner Space2-Instanz
+    # Default bleibt lokal (http) für echte Dev; der Client erzwingt https für Nicht-Localhost.
     SERVICE_BASE = os.environ.get("SERVICE_BASE", "http://127.0.0.1:5050/space2")
 
     REQUEST_TIMEOUT = float(os.environ.get("REQUEST_TIMEOUT", "5.0"))
@@ -18,3 +19,7 @@ class DefaultConfig:
         "TOKEN_FILE",
         os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "bearer_token.txt"))
     )
+
+    # Cookies absichern (setzt sich nur durch, wenn die App über HTTPS ausgeliefert wird)
+    SESSION_COOKIE_SECURE = True
+    SESSION_COOKIE_SAMESITE = "Lax"
